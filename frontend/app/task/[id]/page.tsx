@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from '@auth0/nextjs-auth0';
 import axios from "axios";
+import api from "../../../lib/axios";
 
 interface Task {
   _id: string;
@@ -32,23 +33,16 @@ export default function UpdateTaskPage({ taskId }: { taskId: string }) {
     if (!user) return;
 
     const fetchTask = async () => {
-      try {
-        // const response = await axios.get(`/api/tasks/${taskId}`);
-        const response = {
-          data: {
-            _id: '1',
-            title: 'Task1',
-            description: 'this is task1',
-            status: "Pending" as 'Pending',
-          }
-        };
-        setTask(response.data);
-        setTitle(response.data.title);
-        setDescription(response.data.description);
-        setStatus(response.data.status);
-      } catch (error) {
-        console.error("Error fetching task:", error);
-      }
+        try {
+          const res = await api.get(`/tasks/${taskId}`);
+          setTask(res.data)
+          setTitle(res.data.title);
+        setDescription(res.data.description);
+        setStatus(res.data.status);
+
+        } catch (error) {
+          console.error('Error fetching forums:', error);
+        }
     };
 
     fetchTask();

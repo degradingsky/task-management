@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useUser } from '@auth0/nextjs-auth0';
 import { useRouter } from "next/navigation";
+import api from "../lib/axios";
+import axiosInstance from '../lib/axios';
 
 interface Task {
   _id: string;
@@ -17,14 +19,22 @@ export default function HomePage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
-  useEffect(() => {
-    const dummyTasks: Task[] = [
-      { _id: '1', title: 'Task 1', description: 'This is the first task', status: 'Pending' },
-      { _id: '2', title: 'Task 2', description: 'This is the second task', status: 'Completed' },
-      { _id: '3', title: 'Task 3', description: 'This is the third task', status: 'Pending' },
-    ];
+  const getTasks = async() => {
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+    try {
+      const res = await api.get('/tasks', {
+        headers: {
+          Authorization: `Bearer ${userDetails.token}`,
+        },
+      });
+      setTasks(res.data)
+    } catch (error) {
+      console.error('Error fetching forums:', error);
+    }
+  }
 
-    setTasks(dummyTasks);
+  useEffect(() => {
+    getTasks();
   }, []);
 
   useEffect(() => {
