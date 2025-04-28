@@ -19,31 +19,37 @@ export default function HomePage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
-  const getTasks = async() => {
+  // New State for Add Task Form
+  const [newTitle, setNewTitle] = useState<string>("");
+  const [newDescription, setNewDescription] = useState<string>("");
+  const [newStatus, setNewStatus] = useState<"Pending" | "Completed">("Pending");
+
+  const getTasks = async () => {
+    if (!user) return;
     axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
     try {
       const res = await api.get('/tasks', {
         headers: {
-          Authorization: `Bearer ${userDetails.token}`,
+          Authorization: `Bearer ${user.token}`,
         },
       });
-      setTasks(res.data)
+      setTasks(res.data);
     } catch (error) {
-      console.error('Error fetching forums:', error);
+      console.error('Error fetching tasks:', error);
     }
-  }
+  };
 
   useEffect(() => {
-    getTasks();
-  }, []);
+    if (user) {
+      getTasks();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isLoading && !user) {
-  
       setIsRedirecting(true);
-      router.push('/auth/login'); 
+      router.push('/auth/login');
     }
-    console.log(user)
   }, [user, isLoading, router]);
 
   if (isLoading || isRedirecting) {
@@ -58,7 +64,35 @@ export default function HomePage() {
     router.push(`/task/${id}`);
   };
 
-  
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle || !newDescription) {
+      alert("Title and Description are required");
+      return;
+    }
+
+    try {
+      await api.post('/tasks', {
+        title: newTitle,
+        description: newDescription,
+        status: newStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      // After adding a task, fetch the updated task list
+      await getTasks();
+
+      // Clear form fields
+      setNewTitle("");
+      setNewDescription("");
+      setNewStatus("Pending");
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -74,14 +108,13 @@ export default function HomePage() {
         </button>
       </nav>
 
-
       <div className="p-6">
         <h1 className="text-3xl font-bold mb-6">My Tasks</h1>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 mb-8">
           {tasks.length > 0 ? (
             tasks.map((task) => (
-              <div key={task._id} onClick={() => handleTaskClick(task._id)} className="p-4 bg-white rounded shadow">
+              <div key={task._id} onClick={() => handleTaskClick(task._id)} className="p-4 bg-white rounded shadow cursor-pointer">
                 <h2 className="text-xl font-semibold">{task.title}</h2>
                 <p className="text-gray-600">{task.description}</p>
                 <p className="mt-2 text-sm">
@@ -96,6 +129,50 @@ export default function HomePage() {
             <div>No tasks found.</div>
           )}
         </div>
+
+        {/* Add New Task Form */}
+        <form onSubmit={handleAddTask} className="bg-white p-6 rounded shadow space-y-4">
+          <h2 className="text-2xl font-semibold mb-4">Add New Task</h2>
+
+          <div>
+            <input
+              type="text"
+              placeholder="Task Title"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <textarea
+              placeholder="Task Description"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <select
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value as "Pending" | "Completed")}
+              className="w-full p-3 border border-gray-300 rounded-md"
+            >
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+          >
+            Add Task
+          </button>
+        </form>
       </div>
     </div>
   );
