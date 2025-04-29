@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from '@auth0/nextjs-auth0';
-import axios from "axios";
+import { useRouter, useParams } from "next/navigation";
+
 import api from "../../../lib/axios";
+import { useAuth } from "../../../context/authContext";
+import axios from "../../../lib/axios";
 
 interface Task {
   _id: string;
@@ -13,21 +14,16 @@ interface Task {
   status: "Pending" | "Completed";
 }
 
-export default function UpdateTaskPage({ taskId }: { taskId: string }) {
-  const { user, isLoading } = useUser();
+export default function UpdateTaskPage() {
+  const { user } = useAuth()!;
+  const params = useParams<{id: string}>()
+  const taskId = params.id;
   const router = useRouter();
-
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<Task | null>();
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [status, setStatus] = useState<"Pending" | "Completed">("Pending");
   const [errorMessage, setErrorMessage] = useState<string>("");
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/auth/login');
-    }
-  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -37,9 +33,8 @@ export default function UpdateTaskPage({ taskId }: { taskId: string }) {
           const res = await api.get(`/tasks/${taskId}`);
           setTask(res.data)
           setTitle(res.data.title);
-        setDescription(res.data.description);
-        setStatus(res.data.status);
-
+          setDescription(res.data.description);
+          setStatus(res.data.status);
         } catch (error) {
           console.error('Error fetching forums:', error);
         }
@@ -62,7 +57,7 @@ export default function UpdateTaskPage({ taskId }: { taskId: string }) {
         description,
         status,
       };
-      await axios.put(`/api/tasks/${taskId}`, updatedTask);
+      await axios.put(`/tasks/${taskId}`, updatedTask);
       router.push("/");
     } catch (error) {
       console.error("Error updating task:", error);
@@ -71,7 +66,7 @@ export default function UpdateTaskPage({ taskId }: { taskId: string }) {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`/api/tasks/${taskId}`);
+      await axios.delete(`/tasks/${taskId}`);
       alert("Task deleted successfully");
       router.push('/');
     } catch (error) {
@@ -79,7 +74,7 @@ export default function UpdateTaskPage({ taskId }: { taskId: string }) {
     }
   };
 
-  if (isLoading || (!isLoading && !user) || !task) {
+  if (!user || !task) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         Loading...

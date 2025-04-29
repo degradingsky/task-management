@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { useUser } from '@auth0/nextjs-auth0';
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/authContext";
 import api from "../lib/axios";
 import axiosInstance from '../lib/axios';
 
@@ -14,23 +14,24 @@ interface Task {
 }
 
 export default function HomePage() {
-  const { user, isLoading } = useUser();
+  const { user, isAuthenticated, isLoading, logout, getToken } = useAuth()!;
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
-  // New State for Add Task Form
   const [newTitle, setNewTitle] = useState<string>("");
   const [newDescription, setNewDescription] = useState<string>("");
   const [newStatus, setNewStatus] = useState<"Pending" | "Completed">("Pending");
 
   const getTasks = async () => {
-    if (!user) return;
-    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+    if (!isAuthenticated) return;
+    
     try {
+      const token = await getToken();
+      if (!token) return;
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const res = await api.get('/tasks', {
         headers: {
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       setTasks(res.data);
@@ -40,24 +41,18 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (isAuthenticated) {
       getTasks();
     }
-  }, [user]);
+  }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      setIsRedirecting(true);
-      router.push('/auth/login');
-    }
-  }, [user, isLoading, router]);
 
-  if (isLoading || isRedirecting) {
+  if (isLoading || !isAuthenticated) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
   const handleLogout = () => {
-    router.push("/auth/logout");
+    logout();
   };
 
   const handleTaskClick = (id: string) => {
@@ -72,17 +67,19 @@ export default function HomePage() {
     }
 
     try {
+      const token = await getToken();
+      if (!token) return;
+      
       await api.post('/tasks', {
         title: newTitle,
         description: newDescription,
         status: newStatus,
       }, {
         headers: {
-          Authorization: `Bearer ${user?.token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
-      // After adding a task, fetch the updated task list
       await getTasks();
 
       // Clear form fields
