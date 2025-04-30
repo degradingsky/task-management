@@ -9,7 +9,7 @@ A fullstack task management application with JWT-based authentication, CRUD func
 ### Backend
 - **Framework**: [NestJS](https://nestjs.com/)
 - **Authentication**: JWT via [Passport.js](http://www.passportjs.org/)
-- **Database**: MongoDB
+- **Database**: MongoDB Atlas
 - **ORM**: Mongoose
 - **Validation**: `class-validator` with `@nestjs/swagger` support (`class-validator-shim`)
 - **Logging**: [Pino](https://github.com/pinojs/pino)
@@ -37,7 +37,7 @@ A fullstack task management application with JWT-based authentication, CRUD func
 Create a `.env` file:
 
 ```env
-DATABASE_URL=postgres://<user>:<password>@<host>:<port>/<db>
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/<dbname>?retryWrites=true&w=majority
 ```
 
 #### Install dependencies
@@ -56,7 +56,7 @@ npm run start
 
 After starting the server, visit:
 
-```bash
+```
 http://localhost:5001/swagger
 ```
 
@@ -75,10 +75,8 @@ cd ../frontend
 Create a `.env.local` file:
 
 ```env
-AUTH0_DOMAIN=your-auth0-domain
-AUTH0_CLIENT_ID=your-client-id
-AUTH0_CLIENT_SECRET=your-client-secret
-AUTH0_SECRET=your-random-secret
+NEXT_PUBLIC_API_AUTH0_DOMAIN=your-auth0-domain
+NEXT_PUBLIC_API_AUTH0_CLIENT_ID=your-client-id
 APP_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5001/v1
 ```
@@ -109,12 +107,12 @@ npm run dev
 
 ### Backend
 
-#### Forum Entity
-- CRUD endpoints
-
-#### Comment Entity
-- Create, Read, Delete (Only owners can delete their comments)
-- Many-to-One relation with Forum
+#### Task Entity
+- Full CRUD support:
+  - `POST /tasks`: Create a task
+  - `GET /tasks`: Get all tasks for the user
+  - `PUT /tasks/:id`: Update a task
+  - `DELETE /tasks/:id`: Delete a task
 
 #### Request Validation
 - Strong validation using `class-validator` decorators
@@ -131,12 +129,12 @@ npm run dev
 
 - Secure login with Auth0
 - Authenticated API calls using issued JWT
-- Forum listing, creation, and comment interaction UI
+- View and update tasks per user
 
 ---
 
 ## 🚀 Deployment
 
 - **Backend**: Deployed on [Render](https://render.com) using Docker
-- **Database**: Hosted on [Neon](https://neon.tech)
+- **Database**: Hosted on [MongoDB Atlas](https://www.mongodb.com/atlas)
 - **Frontend**: Hosted on [Vercel](https://vercel.com/)
